@@ -16,10 +16,7 @@ terraform {
 }
 
 provider "aws" {
-  region = "eu-west-2",
-  access_key = "AKIARATHADOVEYTEQYWI"
-  secret_key = "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"
-}
+  region = "eu-west-2"
 }
 
 resource "random_pet" "sg" {}
