@@ -69,6 +69,64 @@ resource "aws_security_group" "web-sg" {
   }
 }
 
+# Provider configuration
+provider "kubernetes" {
+  config_path = "~/.kube/config"  # Path to your kubeconfig file
+}
+# Create a Kubernetes deployment
+resource "kubernetes_deployment" "example_deployment" {
+  metadata {
+    name = "example-deployment"
+    labels = {
+      app = "example-app"
+    }
+  }
+  spec {
+    replicas = 3
+    selector {
+      match_labels = {
+        app = "example-app"
+      }
+    }
+    template {
+      metadata {
+        labels = {
+          app = "example-app"
+        }
+      }
+      spec {
+        container {
+          name = "example-container"
+          image = "mongo:5.0"
+          # Other container configurations as needed
+         }
+         container {
+          name = "example-container"
+          image = "mongo-express"
+          # Other container configurations as needed
+        }
+      }
+    }
+  }
+}
+# Create a Kubernetes service
+resource "kubernetes_service" "example_service" {
+  metadata {
+    name = "example-service"
+  }
+  spec {
+    selector = {
+      app = "example-app"
+    }
+    port {
+      port        = 8081
+      target_port = 8081
+    }
+  }
+}
+
+
+
 output "web-address" {
   value = "${aws_instance.web.public_dns}:8080"
 }
