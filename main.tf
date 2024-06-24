@@ -97,7 +97,7 @@ resource "kubernetes_deployment" "example_deployment" {
       spec {
         container {
           name = "example-container"
-          image = "mongo:5.0"
+          image = "mongo:latest"
           # Other container configurations as needed
          }
          container {
