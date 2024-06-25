@@ -129,7 +129,7 @@ module "eks" {
       max_capacity     = 10
       min_capacity     = 1
 
-      instance_type = "m5.large"
+      instance_type = "t2.micro"
     }
   }
 }
@@ -197,4 +197,76 @@ output "web-address" {
   value = "${aws_instance.web.public_dns}:8081"
 }
 
+resource "aws_s3_bucket" "backup_bucket" {
+  bucket = "my-ec2-backup-bucket" # Set your desired bucket name
+  acl    = "private"
+} 
 
+resource "aws_iam_role" "ec2_backup_role" {
+  name = "ec2-backup-role"
+
+  assume_role_policy = <<EOF
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Action": "sts:AssumeRole",
+      "Principal": {
+        "Service": "ec2.amazonaws.com"
+      },
+      "Effect": "Allow",
+      "Sid": ""
+    }
+  ]
+}
+EOF
+}
+
+resource "aws_iam_policy" "ec2_backup_policy" {
+  name        = "ec2-backup-policy"
+  description = "Permissions for EC2 instances to take backups and upload to S3"
+
+  policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [
+      {
+        Action = [
+          "ec2:CreateSnapshot",
+          "ec2:CreateTags",
+          "ec2:DeleteSnapshot"
+        ],
+        Effect   = "Allow",
+        Resource = "*",
+      },
+      {
+        Action   = [
+          "s3:PutObject",
+          "s3:GetObject"
+        ],
+        Effect   = "Allow",
+        Resource = aws_s3_bucket.backup_bucket.arn,
+      },
+    ],
+  })
+}
+
+resource "aws_instance" "example" {
+  ami           = "ami-12345678" # Set your desired AMI ID
+  instance_type = "t2.micro"    # Set your desired instance type
+  iam_instance_profile = aws_iam_role.ec2_backup_role.name
+
+  tags = {
+    Name = "Example EC2 Instance"
+  }
+  user_data = <<-EOF
+              #!/bin/bash
+              yum update -y
+              yum install -y aws-cli
+              EOF
+} 
+
+
+resource "aws_iam_role_policy_attachment" "ec2_backup_policy_attachment" {
+  policy_arn = aws_iam_policy.ec2_backup_policy.arn
+  role       = aws_iam_role.ec2_backup_role.name
+} 
