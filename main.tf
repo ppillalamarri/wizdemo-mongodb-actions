@@ -250,7 +250,7 @@ resource "aws_iam_policy" "ec2_backup_policy" {
   })
 }
 
-resource "aws_instance" "example" {
+resource "aws_instance" "ami-04f1b917806393faa" {
   ami           = "ami-04f1b917806393faa" # Set your desired AMI ID
   instance_type = "t2.micro"    # Set your desired instance type
   iam_instance_profile = aws_iam_role.ec2_backup_role.name
