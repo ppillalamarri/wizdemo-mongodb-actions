@@ -198,7 +198,7 @@ output "web-address" {
 }
 
 resource "aws_s3_bucket" "backup_bucket" {
-  bucket = "my-ec2-backup-bucket" # Set your desired bucket name
+  bucket = "my-ec2-wizdemo-backup-bucket" # Set your desired bucket name
   acl    = "private"
 } 
 
@@ -251,7 +251,7 @@ resource "aws_iam_policy" "ec2_backup_policy" {
 }
 
 resource "aws_instance" "example" {
-  ami           = "ami-12345678" # Set your desired AMI ID
+  ami           = "ami-04f1b917806393faa" # Set your desired AMI ID
   instance_type = "t2.micro"    # Set your desired instance type
   iam_instance_profile = aws_iam_role.ec2_backup_role.name
 
