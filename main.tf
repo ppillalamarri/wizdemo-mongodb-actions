@@ -188,6 +188,4 @@ resource "kubernetes_service" "example_service" {
 
 
 
-output "web-address" {
-  value = "${aws_instance.web.public_dns}:8081"
-}
+
