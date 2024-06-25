@@ -157,12 +157,12 @@ resource "kubernetes_deployment" "example_deployment" {
       }
       spec {
         container {
-          name = "example-container"
+          name = "db-container"
           image = "mongo:latest"
           # Other container configurations as needed
          }
          container {
-          name = "example-container"
+          name = "app-container"
           image = "mongo-express"
           # Other container configurations as needed
         }
