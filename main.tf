@@ -10,7 +10,6 @@
 #Load Balancer: Configures an ALB to route traffic to the MongoExpress service.
 #S3 Backup and IAM Role: Creates an S3 bucket for MongoDB backups and an IAM role/policy to allow the EC2 instance to perform backups to S3.
 
-
 terraform {
   required_providers {
     aws = {
