@@ -2,6 +2,7 @@
 # Copyright (c) HashiCorp, Inc.
 # SPDX-License-Identifier: MPL-2.0
 
+
 #Explanation:
 #VPC and Subnets: Creates a VPC with one public and one private subnet.
 #Security Groups: Defines security groups for MongoDB and MongoExpress.
