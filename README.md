@@ -6,6 +6,8 @@ Discuss your approach to the build out, including challenges and adaptations
 • Detail your grasp of weak configurations and their potential consequences
 • Demonstrate the value of the security tool in reducing risk
 
+
+
 Database Server Configuration
 • Create a Linux EC2 instance on which a database server is installed (e.g. MongoDB)
 • Configure the database with authentication so you can build a database connection string
