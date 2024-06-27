@@ -1,2 +1,2 @@
 # terraform.tfvars
-key_name = "wizdemokeypair"
+key_name = "existing_wizdemokeypair"
