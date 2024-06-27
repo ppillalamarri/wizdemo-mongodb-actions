@@ -178,11 +178,11 @@ user_data = <<-EOF
               sudo systemctl start mongod
               sudo systemctl enable mongod
               # Setup MongoDB admin user
-              sudo mongosh admin --eval 'db.createUser({user:"admin", pwd:"password", roles:[{role:"root", db:"admin"}]})'
+              #sudo mongosh admin --eval 'db.createUser({user:"admin", pwd:"password", roles:[{role:"root", db:"admin"}]})'
 
               # Configure MongoDB authentication
-              sudo sed -i 's/#security:/security:\\n  authorization: "enabled"/' /etc/mongod.conf
-              sudo systemctl restart mongod
+              #sudo sed -i 's/#security:/security:\\n  authorization: "enabled"/' /etc/mongod.conf
+              #sudo systemctl restart mongod
               EOF
 
   tags = {
