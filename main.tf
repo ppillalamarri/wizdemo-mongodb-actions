@@ -141,7 +141,7 @@ resource "aws_iam_instance_profile" "ec2_instance_profile" {
 # Create a new key pair
 resource "aws_key_pair" "my_key" {
   key_name   = "my-key"
-  public_key = file("~/.ssh/id_rsa.pub")
+  public_key = file("~/.ssh/wizdemo.pub")
 }
 
 
