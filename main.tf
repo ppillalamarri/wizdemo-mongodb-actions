@@ -132,7 +132,7 @@ resource "aws_instance" "mongodb" {
   ami                    = "ami-08ba52a61087f1bd6"  # Choose an appropriate Amazon Linux 2 AMI
   instance_type         = "t2.micro"
   subnet_id             = 
-  security_groups       = [default,star-deer-sg]
+  security_groups       = ["default","star-deer-sg"]
   iam_instance_profile  = aws_iam_instance_profile.ec2_instance_profile.name
 
   user_data = <<-EOF
