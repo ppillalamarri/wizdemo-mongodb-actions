@@ -141,7 +141,6 @@ resource "aws_iam_instance_profile" "ec2_instance_profile" {
 resource "aws_instance" "mongodb" {
   ami                    = "ami-08ba52a61087f1bd6"  # Choose an appropriate Amazon Linux 2 AMI
   instance_type         = "t2.micro"
-  subnet_id             = 
   # Associate the security groups with the instance
   vpc_security_group_ids = [
     aws_security_group.ssh.id,
