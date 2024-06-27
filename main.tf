@@ -156,8 +156,6 @@ resource "aws_iam_instance_profile" "ec2_instance_profile" {
 #}
 
 # Configure the database with authentication so you can build a database connection string
-#TODO: Allow DB traffic to originate only from your VPC
-#TODO: Configure the DB to regularly & automatically backup to your exercise S3 Bucket
 
 resource "aws_instance" "mongodb" {
   #ami                    = "ami-08ba52a61087f1bd6"  # Choose an appropriate Amazon Linux 2 AMI
@@ -199,8 +197,6 @@ user_data = <<-EOF
   }
 }
 
-
-
 output "instance_ip" {
   value = aws_instance.mongodb.public_ip
 }
@@ -209,3 +205,5 @@ output "connection_string" {
   value = "mongodb://admin:password@${aws_instance.mongodb.public_ip}:27017/admin"
 }
 
+#TODO: Allow DB traffic to originate only from your VPC
+#TODO: Configure the DB to regularly & automatically backup to your exercise S3 Bucket
