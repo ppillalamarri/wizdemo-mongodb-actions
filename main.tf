@@ -147,8 +147,9 @@ resource "aws_iam_instance_profile" "ec2_instance_profile" {
 #}
 
 resource "aws_instance" "mongodb" {
-  ami                    = "ami-08ba52a61087f1bd6"  # Choose an appropriate Amazon Linux 2 AMI
-  instance_type         = "t2.micro"
+  #ami                    = "ami-08ba52a61087f1bd6"  # Choose an appropriate Amazon Linux 2 AMI
+ami = "ami-0bb323ae9abcae1a0" # amzn2-ami-kernel-5.10-hvm-2.0.20240620.0-x86_64-gp2  
+instance_type         = "t2.micro"
   #key_name              = aws_key_pair.generated_key.key_name
 key_name              = var.key_name
 
@@ -158,19 +159,27 @@ key_name              = var.key_name
     aws_security_group.http.id
   ]
 
-  user_data = <<-EOF
+user_data = <<-EOF
               #!/bin/bash
-              yum update -y
-              amazon-linux-extras install -y mongodb4.0
-              systemctl start mongod
-              systemctl enable mongod
+              sudo tee -a /etc/yum.repos.d/mongodb-org-4.4.repo << EOM
+              [mongodb-org-6.0]
+              name=MongoDB Repository
+              baseurl=https://repo.mongodb.org/yum/amazon/2/mongodb-org/6.0/x86_64/
+              gpgcheck=1
+              enabled=1
+              gpgkey=https://www.mongodb.org/static/pgp/server-6.0.asc
+              EOM
 
+              sudo yum install -y mongodb-org
+              sudo systemctl start mongod
+              sudo systemctl enable mongod
+              EOF
               # Setup MongoDB admin user
               mongo admin --eval 'db.createUser({user:"admin", pwd:"password", roles:[{role:"root", db:"admin"}]})'
 
               # Configure MongoDB authentication
-              sed -i 's/#security:/security:\\n  authorization: "enabled"/' /etc/mongod.conf
-              systemctl restart mongod
+              sudo sed -i 's/#security:/security:\\n  authorization: "enabled"/' /etc/mongod.conf
+              sudo systemctl restart mongod
               EOF
 
   tags = {
