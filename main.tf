@@ -24,7 +24,7 @@ terraform {
   required_version = ">= 1.1.0"
 }
 
-
+variable "key_name" {}
 
 provider "aws" {
   region = "eu-west-1"
