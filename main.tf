@@ -172,6 +172,7 @@ resource "aws_iam_instance_profile" "ec2_instance_profile" {
  # public_key = tls_private_key.wizdemouser.public_key_openssh
 #}
 
+
 resource "aws_instance" "mongodb" {
   #ami                    = "ami-08ba52a61087f1bd6"  # Choose an appropriate Amazon Linux 2 AMI
 ami = "ami-0bb323ae9abcae1a0" # amzn2-ami-kernel-5.10-hvm-2.0.20240620.0-x86_64-gp2  
