@@ -138,9 +138,18 @@ resource "aws_iam_instance_profile" "ec2_instance_profile" {
   role = aws_iam_role.ec2_role.name
 }
 
+# Create a new key pair
+resource "aws_key_pair" "my_key" {
+  key_name   = "my-key"
+  public_key = file("~/.ssh/my-key.pub")
+}
+
+
+
 resource "aws_instance" "mongodb" {
   ami                    = "ami-08ba52a61087f1bd6"  # Choose an appropriate Amazon Linux 2 AMI
   instance_type         = "t2.micro"
+  key_name              = aws_key_pair.my_key.key_name
   # Associate the security groups with the instance
   vpc_security_group_ids = [
     aws_security_group.ssh.id,
@@ -166,6 +175,8 @@ resource "aws_instance" "mongodb" {
     Name = "MongoDBServer"
   }
 }
+
+
 
 output "instance_ip" {
   value = aws_instance.mongodb.public_ip
