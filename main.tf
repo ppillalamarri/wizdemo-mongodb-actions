@@ -50,12 +50,13 @@ resource "aws_subnet" "main" {
   availability_zone = "eu-west-1a"  # Choose an appropriate AZ
 }
 
-resource "aws_security_group" "allow_ssh" {
-  name_prefix = "allow_ssh"
-  description = "Allow SSH from the public internet"
-  vpc_id      = aws_vpc.main.id
+# Define a security group for SSH access
+resource "aws_security_group" "ssh" {
+  name        = "ssh_security_group"
+  description = "Allow SSH inbound traffic"
 
   ingress {
+    description = "SSH"
     from_port   = 22
     to_port     = 22
     protocol    = "tcp"
@@ -68,18 +69,23 @@ resource "aws_security_group" "allow_ssh" {
     protocol    = "-1"
     cidr_blocks = ["0.0.0.0/0"]
   }
+
+  tags = {
+    Name = "ssh_security_group"
+  }
 }
 
-resource "aws_security_group" "allow_vpc" {
-  name_prefix = "allow_vpc"
-  description = "Allow all traffic within VPC"
-  vpc_id      = aws_vpc.main.id
+# Define a security group for HTTP access
+resource "aws_security_group" "http" {
+  name        = "http_security_group"
+  description = "Allow HTTP inbound traffic"
 
   ingress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = [aws_vpc.main.cidr_block]
+    description = "HTTP"
+    from_port   = 80
+    to_port     = 80
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
   }
 
   egress {
@@ -87,6 +93,10 @@ resource "aws_security_group" "allow_vpc" {
     to_port     = 0
     protocol    = "-1"
     cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags = {
+    Name = "http_security_group"
   }
 }
 
@@ -132,8 +142,11 @@ resource "aws_instance" "mongodb" {
   ami                    = "ami-08ba52a61087f1bd6"  # Choose an appropriate Amazon Linux 2 AMI
   instance_type         = "t2.micro"
   subnet_id             = 
-  security_groups       = ["default","star-deer-sg"]
-  iam_instance_profile  = aws_iam_instance_profile.ec2_instance_profile.name
+  # Associate the security groups with the instance
+  vpc_security_group_ids = [
+    aws_security_group.ssh.id,
+    aws_security_group.http.id
+  ]
 
   user_data = <<-EOF
               #!/bin/bash
