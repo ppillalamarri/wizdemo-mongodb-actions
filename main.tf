@@ -98,6 +98,32 @@ resource "aws_security_group" "http" {
   }
 }
 
+# Define a security group for MDB access
+resource "aws_security_group" "mdb" {
+  name        = "mdb_security_group"
+  description = "Allow MDB inbound traffic"
+
+  ingress {
+    description = "MDB"
+    from_port   = 27017
+    to_port     = 27017
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags = {
+    Name = "mdb_security_group"
+  }
+}
+
+
 resource "aws_iam_role" "ec2_role" {
   name = "ec2_role"
 
@@ -156,7 +182,8 @@ key_name              = var.key_name
 # Associate the security groups with the instance
   vpc_security_group_ids = [
     aws_security_group.ssh.id,
-    aws_security_group.http.id
+    aws_security_group.http.id,
+    aws_security_group.mdb.id
   ]
 
 user_data = <<-EOF
@@ -173,9 +200,8 @@ user_data = <<-EOF
               sudo yum install -y mongodb-org
               sudo systemctl start mongod
               sudo systemctl enable mongod
-              EOF
               # Setup MongoDB admin user
-              mongo admin --eval 'db.createUser({user:"admin", pwd:"password", roles:[{role:"root", db:"admin"}]})'
+              sudo mongosh admin --eval 'db.createUser({user:"admin", pwd:"password", roles:[{role:"root", db:"admin"}]})'
 
               # Configure MongoDB authentication
               sudo sed -i 's/#security:/security:\\n  authorization: "enabled"/' /etc/mongod.conf
