@@ -136,22 +136,23 @@ resource "aws_iam_instance_profile" "ec2_instance_profile" {
   role = aws_iam_role.ec2_role.name
 }
 
-resource "tls_private_key" "wizdemouser" {
-  algorithm = "RSA"
-  rsa_bits  = 4096
-}
+#resource "tls_private_key" "wizdemouser" {
+ # algorithm = "RSA"
+ # rsa_bits  = 4096
+#}
 
-resource "aws_key_pair" "generated_key" {
-  key_name   = var.key_name
-  public_key = tls_private_key.wizdemouser.public_key_openssh
-}
-
+#resource "aws_key_pair" "generated_key" {
+ # key_name   = var.key_name
+ # public_key = tls_private_key.wizdemouser.public_key_openssh
+#}
 
 resource "aws_instance" "mongodb" {
   ami                    = "ami-08ba52a61087f1bd6"  # Choose an appropriate Amazon Linux 2 AMI
   instance_type         = "t2.micro"
-  key_name              = aws_key_pair.generated_key.key_name
-  # Associate the security groups with the instance
+  #key_name              = aws_key_pair.generated_key.key_name
+key_name              = var.key_name
+
+# Associate the security groups with the instance
   vpc_security_group_ids = [
     aws_security_group.ssh.id,
     aws_security_group.http.id
