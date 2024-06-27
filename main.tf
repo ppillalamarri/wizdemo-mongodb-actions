@@ -2,7 +2,7 @@
 # Copyright (c) HashiCorp, Inc.
 # SPDX-License-Identifier: MPL-2.0
 
-
+ 
 #Explanation:
 #VPC and Subnets: Creates a VPC with one public and one private subnet.
 #Security Groups: Defines security groups for MongoDB and MongoExpress.
@@ -25,7 +25,8 @@ terraform {
   required_version = ">= 1.1.0"
 }
 
-
+#Database Server Configuration
+# Create a Linux EC2 instance on which a database server is installed (e.g. MongoDB)
 provider "aws" {
   region = "eu-west-1"
   access_key = "AKIARATHADOVEYTEQYWI"
@@ -49,6 +50,10 @@ resource "aws_subnet" "main" {
   cidr_block        = "10.0.1.0/24"
   availability_zone = "eu-west-1a"  # Choose an appropriate AZ
 }
+
+
+# Configure a security group to allow SSH to the VM from the public internet
+
 
 # Define a security group for SSH access
 resource "aws_security_group" "ssh" {
@@ -100,8 +105,7 @@ resource "aws_security_group" "http" {
   }
 }
 
-
-
+# Configure an instance profile to the VM and add the permission “ec2:*” as a custom policy
 
 resource "aws_iam_role" "ec2_role" {
   name = "ec2_role"
@@ -151,6 +155,9 @@ resource "aws_iam_instance_profile" "ec2_instance_profile" {
  # public_key = tls_private_key.wizdemouser.public_key_openssh
 #}
 
+# Configure the database with authentication so you can build a database connection string
+#TODO: Allow DB traffic to originate only from your VPC
+#TODO: Configure the DB to regularly & automatically backup to your exercise S3 Bucket
 
 resource "aws_instance" "mongodb" {
   #ami                    = "ami-08ba52a61087f1bd6"  # Choose an appropriate Amazon Linux 2 AMI
