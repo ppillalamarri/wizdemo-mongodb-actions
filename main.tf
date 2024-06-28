@@ -11,6 +11,10 @@
 #Load Balancer: Configures an ALB to route traffic to the MongoExpress service.
 #S3 Backup and IAM Role: Creates an S3 bucket for MongoDB backups and an IAM role/policy to allow the EC2 instance to perform backups to S3.
 
+#TODO: Allow DB traffic to originate only from your VPC
+#TODO Ensure your web application authenticates to your database server (connection strings are a common approach)
+#TODO: Configure the DB to regularly & automatically backup to your exercise S3 Bucket
+
 terraform {
   required_providers {
     aws = {
@@ -205,5 +209,3 @@ output "connection_string" {
   value = "mongodb://admin:password@${aws_instance.mongodb.public_ip}:27017/admin"
 }
 
-#TODO: Allow DB traffic to originate only from your VPC
-#TODO: Configure the DB to regularly & automatically backup to your exercise S3 Bucket
