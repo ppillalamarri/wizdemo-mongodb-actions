@@ -1,21 +1,21 @@
+#Create an EKS cluster instance in the same VPC as your database server
+#Ensure your built container image contains an arbitrary file called “wizexercise.txt” with some content
 
-# Copyright (c) HashiCorp, Inc.
-# SPDX-License-Identifier: MPL-2.0
+#Build and host a container image for your web application*
 
- 
-#Explanation:
-#VPC and Subnets: Creates a VPC with one public and one private subnet.
-#Security Groups: Defines security groups for MongoDB and MongoExpress.
-#EC2 Instance for MongoDB: Launches an EC2 instance in the public subnet with MongoDB running in a Docker container.
-#ECS Cluster for MongoExpress: Sets up an ECS Fargate cluster and task definition for the MongoExpress web application.
-#Load Balancer: Configures an ALB to route traffic to the MongoExpress service.
-#S3 Backup and IAM Role: Creates an S3 bucket for MongoDB backups and an IAM role/policy to allow the EC2 instance to perform backups to S3.
+#Deploy your container-based web application to the EKS cluster
+
+#TODO Configure your EKS cluster to grant cluster-admin privileges to your web application container(s)
+
+#TODO Ensure your web application authenticates to your database server (connection strings are a common approach)
+#TODO Allow public internet traffic to your web application using service type loadbalancer
+
 
 terraform {
   required_providers {
     aws = {
       source  = "hashicorp/aws"
-      version = "4.52.0"
+      version = "5.40.0"
     }
     random = {
       source  = "hashicorp/random"
@@ -25,185 +25,127 @@ terraform {
   required_version = ">= 1.1.0"
 }
 
-#Database Server Configuration
-# Create a Linux EC2 instance on which a database server is installed (e.g. MongoDB)
 provider "aws" {
   region = "eu-west-1"
   access_key = "AKIARATHADOVEYTEQYWI"
   secret_key = "uuIl8NxNJAFVu7/VXLYKH0zmhrFXoRn9APXB8I6r"
 }
 
-#This script accomplishes the following:
-
-#Creates a VPC and a subnet.
-#Creates security groups to allow SSH from the public internet and database traffic within the VPC.
-#Creates an IAM role with ec2:* permissions and attaches it to the EC2 instance.
-#Launches an EC2 instance with MongoDB installed and configured with authentication.
-#Outputs the instance IP and MongoDB connection string.
 
 resource "aws_vpc" "main" {
   cidr_block = "10.0.0.0/16"
 }
 
-resource "aws_subnet" "main" {
-  vpc_id            = aws_vpc.main.id
-  cidr_block        = "10.0.1.0/24"
-  availability_zone = "eu-west-1a"  # Choose an appropriate AZ
+resource "aws_subnet" "eks_subnet_a" {
+  vpc_id     = aws_vpc.eks_vpc.id
+  cidr_block = "10.0.1.0/24"
+  availability_zone = "us-west-1a"
+  tags = {
+    Name = "eks_subnet_a"
+  }
 }
 
-
-# Configure a security group to allow SSH to the VM from the public internet
-
-
-# Define a security group for SSH access
-resource "aws_security_group" "ssh" {
-  name        = "ssh_security_group"
-  description = "Allow SSH inbound traffic"
-
-  ingress {
-    description = "SSH"
-    from_port   = 22
-    to_port     = 22
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
+resource "aws_subnet" "eks_subnet_b" {
+  vpc_id     = aws_vpc.eks_vpc.id
+  cidr_block = "10.0.2.0/24"
+  availability_zone = "us-west-1b"
+  tags = {
+    Name = "eks_subnet_b"
   }
+}
 
-  egress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
+resource "aws_internet_gateway" "eks_igw" {
+  vpc_id = aws_vpc.eks_vpc.id
+  tags = {
+    Name = "eks_igw"
+  }
+}
+
+resource "aws_route_table" "eks_route_table" {
+  vpc_id = aws_vpc.eks_vpc.id
+
+  route {
+    cidr_block = "0.0.0.0/0"
+    gateway_id = aws_internet_gateway.eks_igw.id
   }
 
   tags = {
-    Name = "ssh_security_group"
+    Name = "eks_route_table"
   }
 }
 
-# Define a security group for HTTP access
-resource "aws_security_group" "http" {
-  name        = "http_security_group"
-  description = "Allow HTTP inbound traffic"
-
-  ingress {
-    description = "HTTP"
-    from_port   = 80
-    to_port     = 80
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  egress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  tags = {
-    Name = "http_security_group"
-  }
+resource "aws_route_table_association" "a" {
+  subnet_id      = aws_subnet.eks_subnet_a.id
+  route_table_id = aws_route_table.eks_route_table.id
 }
 
-# Configure an instance profile to the VM and add the permission “ec2:*” as a custom policy
-
-resource "aws_iam_role" "ec2_role" {
-  name = "ec2_role"
-
-  assume_role_policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Action = "sts:AssumeRole"
-        Effect = "Allow"
-        Principal = {
-          Service = "ec2.amazonaws.com"
-        }
-      },
-    ]
-  })
+resource "aws_route_table_association" "b" {
+  subnet_id      = aws_subnet.eks_subnet_b.id
+  route_table_id = aws_route_table.eks_route_table.id
 }
 
-resource "aws_iam_role_policy" "ec2_policy" {
-  name = "ec2_policy"
-  role = aws_iam_role.ec2_role.id
+resource "eks" "wizdemoeks" {
+  source          = "terraform-aws-modules/eks/aws"
+  cluster_name    = "my-eks-cluster"
+  cluster_version = "1.21"
+  subnets         = [aws_subnet.eks_subnet_a.id, 
+                        aws_subnet.eks_subnet_b.id]
+  vpc_id          = aws_vpc.eks_vpc.id
 
-  policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Action = "ec2:*"
-        Effect = "Allow"
-        Resource = "*"
-      },
-    ]
-  })
-}
+  node_groups = {
+    eks_nodes = {
+      desired_capacity = 2
+      max_capacity     = 3
+      min_capacity     = 1
 
-resource "aws_iam_instance_profile" "ec2_instance_profile" {
-  name = "ec2_instance_profile"
-  role = aws_iam_role.ec2_role.name
-}
+      instance_type = "t2.micro"
 
-#resource "tls_private_key" "wizdemouser" {
- # algorithm = "RSA"
- # rsa_bits  = 4096
-#}
+      key_name = "existing_wizdemokeypair"  # Ensure you have a valid EC2 key pair
 
-#resource "aws_key_pair" "generated_key" {
- # key_name   = var.key_name
- # public_key = tls_private_key.wizdemouser.public_key_openssh
-#}
-
-# Configure the database with authentication so you can build a database connection string
-
-resource "aws_instance" "mongodb" {
-  #ami                    = "ami-08ba52a61087f1bd6"  # Choose an appropriate Amazon Linux 2 AMI
-ami = "ami-0bb323ae9abcae1a0" # amzn2-ami-kernel-5.10-hvm-2.0.20240620.0-x86_64-gp2  
-instance_type         = "t2.micro"
-  #key_name              = aws_key_pair.generated_key.key_name
-key_name              = var.key_name
-
-# Associate the security groups with the instance
-  vpc_security_group_ids = [
-    aws_security_group.ssh.id,
-    aws_security_group.http.id
-  ]
-
-user_data = <<-EOF
-              #!/bin/bash
-              sudo tee -a /etc/yum.repos.d/mongodb-org-4.4.repo << EOM
-              [mongodb-org-6.0]
-              name=MongoDB Repository
-              baseurl=https://repo.mongodb.org/yum/amazon/2/mongodb-org/6.0/x86_64/
-              gpgcheck=1
-              enabled=1
-              gpgkey=https://www.mongodb.org/static/pgp/server-6.0.asc
-              EOM
-
-              sudo yum install -y mongodb-org
-              sudo systemctl start mongod
-              sudo systemctl enable mongod
-              # Setup MongoDB admin user
-              #sudo mongosh admin --eval 'db.createUser({user:"admin", pwd:"password", roles:[{role:"root", db:"admin"}]})'
-
-              # Configure MongoDB authentication
-              #sudo sed -i 's/#security:/security:\\n  authorization: "enabled"/' /etc/mongod.conf
-              #sudo systemctl restart mongod
-              EOF
-
-  tags = {
-    Name = "MongoDBServer"
+      additional_tags = {
+        Name = "eks_nodes"
+      }
+    }
   }
 }
 
-output "instance_ip" {
-  value = aws_instance.mongodb.public_ip
+data "aws_iam_policy_document" "eks_assume_role_policy" {
+  statement {
+    actions = ["sts:AssumeRole"]
+
+    principals {
+      type        = "Service"
+      identifiers = ["eks.amazonaws.com"]
+    }
+  }
 }
 
-output "connection_string" {
-  value = "mongodb://admin:password@${aws_instance.mongodb.public_ip}:27017/admin"
+resource "aws_iam_role" "eks_role" {
+  name               = "eks-cluster-role"
+  assume_role_policy = data.aws_iam_policy_document.eks_assume_role_policy.json
 }
 
-#TODO: Allow DB traffic to originate only from your VPC
-#TODO: Configure the DB to regularly & automatically backup to your exercise S3 Bucket
+resource "aws_iam_role_policy_attachment" "eks_cluster_policy" {
+  policy_arn = "arn:aws:iam::aws:policy/AmazonEKSClusterPolicy"
+  role       = aws_iam_role.eks_role.name
+}
+
+resource "aws_iam_role_policy_attachment" "eks_service_policy" {
+  policy_arn = "arn:aws:iam::aws:policy/AmazonEKSServicePolicy"
+  role       = aws_iam_role.eks_role.name
+}
+
+output "cluster_id" {
+  description = "EKS cluster ID"
+  value       = module.eks.cluster_id
+}
+
+output "cluster_endpoint" {
+  description = "EKS cluster endpoint"
+  value       = module.eks.cluster_endpoint
+}
+
+output "cluster_security_group_id" {
+  description = "EKS cluster security group ID"
+  value       = module.eks.cluster_security_group_id
+}
